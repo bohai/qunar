@@ -1,12 +1,16 @@
 package main
 
 import (
+	"database/sql"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/PuerkitoBio/fetchbot"
+	"github.com/bitly/go-simplejson"
 )
 
 func getLatestFriday() time.Time {
@@ -48,6 +52,45 @@ func getURL(t1 string, t2 string) string {
 	return str0 + str1 + str2 + str3 + str4 + str5 + str6
 }
 
+func NewDB() *sql.DB {
+	db, err := sql.Open("sqlite3", "example.sqlite")
+	if err != nil {
+		panic(err)
+	}
+
+	_, err = db.Exec("create table if not exists prices(from text, to text, fromday datetime, today datetime, price integer, total integer)")
+	if err != nil {
+		panic(err)
+	}
+	return db
+}
+
+func handler(ctx *fetchbot.Context, res *http.Response, err error) {
+	if err != nil {
+		fmt.Printf("error: %s\n", err)
+		return
+	}
+	fmt.Printf("[%d] %s %s\n", res.StatusCode, ctx.Cmd.Method(), ctx.Cmd.URL())
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	js, err := simplejson.NewJson(body[1 : len(body)-1])
+	if err != nil || js == nil {
+		fmt.Println(err)
+		return
+	}
+	for i, v := range js.Get("rt_data").Get("flightGroupInfo").MustMap() {
+		a := v.(map[string]interface{})
+		rank, _ := a["rank"].(json.Number).Int64()
+		if rank == 1 {
+			s := strings.Split(i, "|")
+			fmt.Println(s[0], s[1], v)
+		}
+	}
+}
+
 func main() {
 	f := fetchbot.New(fetchbot.HandlerFunc(handler))
 	f.DisablePoliteness = true
@@ -58,14 +101,4 @@ func main() {
 		queue.SendStringGet(getURL(k, l))
 	}
 	queue.Close()
-}
-
-func handler(ctx *fetchbot.Context, res *http.Response, err error) {
-	if err != nil {
-		fmt.Printf("error: %s\n", err)
-		return
-	}
-	//fmt.Printf("[%d] %s %s\n", res.StatusCode, ctx.Cmd.Method(), ctx.Cmd.URL())
-	body, err := ioutil.ReadAll(res.Body)
-	fmt.Println(string(body))
 }
