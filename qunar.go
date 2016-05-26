@@ -29,7 +29,7 @@ func getDayMap() map[time.Time]time.Time {
 	var day0, day1 time.Time
 	for i := 0; i < MAX; i++ {
 		day0 = t.AddDate(0, 0, i*7)
-		day1 = t.AddDate(0, 0, i*7+4)
+		day1 = t.AddDate(0, 0, i*7+3)
 		daymap[day0] = day1
 	}
 	return daymap
@@ -106,8 +106,8 @@ var db *sql.DB
 
 func main() {
 	db = NewDB()
-
-	for k, l = range getDayMap() {
+	days := getDayMap()
+	for k, l = range days {
 		f := fetchbot.New(fetchbot.HandlerFunc(handler))
 		f.DisablePoliteness = true
 		queue := f.Start()
