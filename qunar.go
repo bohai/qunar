@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/PuerkitoBio/fetchbot"
@@ -14,13 +15,14 @@ import (
 )
 
 func getLatestFriday() time.Time {
-	day0 := time.Now()
-	i := time.Friday - day0.Weekday()
-	day1 := day0.AddDate(0, 0, int(i))
-	if day1.Before(day0) {
-		day1.AddDate(0, 0, 7)
+	var day0 time.Time
+	for i := 0; i < 7; i++ {
+		day0 = time.Now().AddDate(0, 0, i)
+		if day0.Weekday() == time.Friday {
+			break
+		}
 	}
-	return day1
+	return day0
 }
 
 func getDayMap() map[time.Time]time.Time {
@@ -35,19 +37,28 @@ func getDayMap() map[time.Time]time.Time {
 	return daymap
 }
 
-func getURL(t1 time.Time, t2 time.Time) string {
-	str0 := "http://flight.qunar.com/twell/longwell?&tags=2&http%3A%2F%2Fwww.travelco.com%2FsearchArrivalAirport=%E4%B8%BD%E6%B1%9F&http%3A%2F%2Fwww.travelco.com%2FsearchDepartureAirport=%E8%A5%BF%E5%AE%89&http%3A%2F%2Fwww.travelco.com%2F"
+func getURL(t1, t2 time.Time, cityFrom, cityTo, cityCodeFrom, cityCodeTo string) string {
+	str0 := "http://flight.qunar.com/twell/longwell?&tags=2&http%3A%2F%2Fwww.travelco.com%2F"
+	str01 := "searchArrivalAirport=%s"
+	str02 := "&http%3A%2F%2Fwww.travelco.com%2F"
+	str03 := "searchDepartureAirport=%s"
+	str04 := "&http%3A%2F%2Fwww.travelco.com%2F"
 	str1 := "searchDepartureTime=%s"
 	str2 := "&http%3A%2F%2Fwww.travelco.com%2F"
 	str3 := "searchReturnTime=%s"
-	str4 := "&locale=zh&nextNDays=0&op=1&reset=true&searchLangs=zh&searchType=RoundTripFlight&version=thunder&mergeFlag=0&xd=f1452344371000&wyf=0P8%2Fflr0fRPFflU%2FERPHWlt%2F0YA%2FWlr%2F%2FQPFuUd8lyeFlUd%2F%7C1441321882698&fromCity=%E8%A5%BF%E5%AE%89&toCity=%E4%B8%BD%E6%B1%9F&"
+	str4 := "&locale=zh&nextNDays=0&op=1&reset=true&searchLangs=zh&searchType=RoundTripFlight&version=thunder&mergeFlag=0&xd=f1452344371000&wyf=0P8%2Fflr0fRPFflU%2FERPHWlt%2F0YA%2FWlr%2F%2FQPFuUd8lyeFlUd%2F%7C1441321882698&"
+	str40 := "fromCity=%s&toCity=%s&"
 	str5 := "fromDate=%s&toDate=%s"
-	str6 := "&fromCode=SIA&toCode=LJG&from=fi_re_search&lowestPrice=null&_token=46688"
+	str6 := "&fromCode=%s&toCode=%s&from=fi_re_search&lowestPrice=null&_token=46688"
 
 	str1 = fmt.Sprintf(str1, t1.Format(layout))
+	str01 = fmt.Sprintf(str01, url.QueryEscape(cityTo))
+	str03 = fmt.Sprintf(str03, url.QueryEscape(cityFrom))
 	str3 = fmt.Sprintf(str3, t2.Format(layout))
+	str40 = fmt.Sprintf(str40, url.QueryEscape(cityFrom), url.QueryEscape(cityTo))
 	str5 = fmt.Sprintf(str5, t1.Format(layout), t2.Format(layout))
-	return str0 + str1 + str2 + str3 + str4 + str5 + str6
+	str6 = fmt.Sprintf(str6, cityCodeFrom, cityCodeTo)
+	return str0 + str01 + str02 + str03 + str04 + str1 + str2 + str3 + str4 + str40 + str5 + str6
 }
 
 func NewDB() *sql.DB {
@@ -107,11 +118,17 @@ var db *sql.DB
 func main() {
 	db = NewDB()
 	days := getDayMap()
+	FromCity := map[string]string{"西安": "XIA"}
+	ToCity := map[string]string{"丽江": "LIJ", "上海": "SHA"}
 	for k, l = range days {
-		f := fetchbot.New(fetchbot.HandlerFunc(handler))
-		f.DisablePoliteness = true
-		queue := f.Start()
-		queue.SendStringGet(getURL(k, l))
-		queue.Close()
+		for cityFrom, cityCodeFrom := range FromCity {
+			for cityTo, cityCodeTo := range ToCity {
+				f := fetchbot.New(fetchbot.HandlerFunc(handler))
+				f.DisablePoliteness = true
+				queue := f.Start()
+				queue.SendStringGet(getURL(k, l, cityFrom, cityTo, cityCodeFrom, cityCodeTo))
+				queue.Close()
+			}
+		}
 	}
 }
