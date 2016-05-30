@@ -40,10 +40,10 @@ func getURL(t1, t2 time.Time, city1, city2, code1, code2 string) string {
 	rawURL, _ := url.QueryUnescape(codedURL)
 	u, _ := url.Parse(rawURL)
 	q := u.Query()
-	q.Set("searchDepartureAirport", city1)
-	q.Set("searchArrivalAirport", city2)
-	q.Set("searchDepartureTime", t1.Format(layout))
-	q.Set("searchReturnTime", t2.Format(layout))
+	q.Set("http://www.travelco.com/searchDepartureAirport", city1)
+	q.Set("http://www.travelco.com/searchArrivalAirport", city2)
+	q.Set("http://www.travelco.com/searchDepartureTime", t1.Format(layout))
+	q.Set("http://www.travelco.com/searchReturnTime", t2.Format(layout))
 	q.Set("fromCity", city1)
 	q.Set("toCity", city2)
 	q.Set("fromCode", code1)
@@ -56,11 +56,11 @@ func getURL(t1, t2 time.Time, city1, city2, code1, code2 string) string {
 }
 
 const layout = "2006-01-02"
-const MAX = 1
+const MAX = 8
 
 func main() {
 	FromCity := map[string]string{"西安": "XIY"}
-	ToCity := map[string]string{"丽江": "LJG"}
+	ToCity := map[string]string{"丽江": "LJG", "昆明": "KMG", "大理": "DLU", "北海": "BHY", "天津": "TSN", "海口": "HAK", "扬州": "YTY"}
 	db := dbutils.NewDB1()
 	defer db.Close()
 	stmt, err := db.Prepare("INSERT INTO urls(url, date) values(?, ?)")
