@@ -56,16 +56,18 @@ func getURL(t1, t2 time.Time, city1, city2, code1, code2 string) string {
 }
 
 const layout = "2006-01-02"
-const MAX = 8
+const MAX = 1
 
 func main() {
 	FromCity := map[string]string{"西安": "XIY"}
 	ToCity := map[string]string{"丽江": "LJG"}
-	db := dbutils.NewDB()
+	db := dbutils.NewDB1()
+	defer db.Close()
 	stmt, err := db.Prepare("INSERT INTO urls(url, date) values(?, ?)")
 	if err != nil {
 		panic(err)
 	}
+	defer stmt.Close()
 
 	days := getDayMap()
 	for d1, d2 := range days {
