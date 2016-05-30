@@ -12,30 +12,20 @@ import (
 var db *sql.DB
 
 func main() {
-	db = dbutils.NewDB()
+	db = dbutils.NewDB3()
+	var fromCity, toCity string
 	var price, total int
-	var fromDay, toDay, day time.Time
-	var url string
+	var fromDay, toDay time.Time
 	const layout = "2006-01-02"
 
-	rows, _ := db.Query("select fromDay, toDay, price, total FROM prices")
+	rows, _ := db.Query("select fromCity, toCity, fromDay, toDay, price, total FROM prices")
 	defer rows.Close()
 
 	for rows.Next() {
-		rows.Scan(&fromDay, &toDay, &price, &total)
-		fmt.Println(fromDay.Format(layout), toDay.Format(layout), price, total)
+		rows.Scan(&fromCity, &toCity, &fromDay, &toDay, &price, &total)
+		fmt.Println(fromCity, toCity, fromDay.Format(layout), toDay.Format(layout), price, total)
 	}
 
-	rows2, _ := db.Query("select url, date FROM urls")
-	defer rows2.Close()
-	for rows2.Next() {
-		rows2.Scan(&url, &day)
-		fmt.Println(url, day.Format(layout))
-	}
-
-	stmt, _ := db.Prepare("DELETE from prices")
-	stmt.Exec()
-	stmt, _ = db.Prepare("DELETE from urls")
-	defer stmt.Close()
-	stmt.Exec()
+	//stmt, _ := db.Prepare("DELETE from prices")
+	//stmt.Exec()
 }
