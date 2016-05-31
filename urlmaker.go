@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/bohai/qunar/utils"
+	"github.com/go-ini/ini"
 )
 
 func getLatestFriday() time.Time {
@@ -22,7 +23,7 @@ func getDayMap() map[time.Time]time.Time {
 	t := getLatestFriday()
 	daymap := make(map[time.Time]time.Time)
 	var day0, day1 time.Time
-	for i := 0; i < MAX; i++ {
+	for i := 0; i < max; i++ {
 		day0 = t.AddDate(0, 0, i*7)
 		day1 = t.AddDate(0, 0, i*7+3)
 		daymap[day0] = day1
@@ -56,11 +57,24 @@ func getURL(t1, t2 time.Time, city1, city2, code1, code2 string) string {
 }
 
 const layout = "2006-01-02"
-const MAX = 8
+
+var fromCitys, toCitys []*ini.Key
+var max int
+
+func readConfig() {
+	cfg, err := ini.Load("./qunar.ini")
+	if err != nil {
+		panic(err)
+	}
+	sec := cfg.Section("from_citys")
+	fromCitys = sec.Keys()
+	sec = cfg.Section("to_citys")
+	toCitys = sec.Keys()
+	max = cfg.Section("common").Key("max").MustInt(8)
+}
 
 func main() {
-	FromCity := map[string]string{"西安": "XIY"}
-	ToCity := map[string]string{"丽江": "LJG", "昆明": "KMG", "大理": "DLU", "北海": "BHY", "天津": "TSN", "海口": "HAK", "扬州": "YTY"}
+	readConfig()
 	db := dbutils.NewDB1()
 	defer db.Close()
 	stmt, err := db.Prepare("INSERT INTO urls(url, date) values(?, ?)")
@@ -71,9 +85,10 @@ func main() {
 
 	days := getDayMap()
 	for d1, d2 := range days {
-		for city1, code1 := range FromCity {
-			for city2, code2 := range ToCity {
-				stmt.Exec(getURL(d1, d2, city1, city2, code1, code2), time.Now())
+		for i, code1 := range fromCitys {
+			for j, code2 := range toCitys {
+				//fmt.Println(d1, d2, fromCitys[i].Name(), toCitys[j].Name(), code1.Value(), code2.Value(), time.Now())
+				stmt.Exec(getURL(d1, d2, fromCitys[i].Name(), toCitys[j].Name(), code1.Value(), code2.Value()), time.Now())
 				//fmt.Println(getURL(d1, d2, city1, city2, code1, code2))
 			}
 		}

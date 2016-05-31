@@ -16,6 +16,11 @@
 			"Rev": "aabad6e819789e569bd6aabf444c935aa9ba1e44"
 		},
 		{
+			"ImportPath": "github.com/go-ini/ini",
+			"Comment": "v1.11.0",
+			"Rev": "12f418cc7edc5a618a51407b7ac1f1f512139df3"
+		},
+		{
 			"ImportPath": "github.com/mattn/go-sqlite3",
 			"Comment": "v1.1.0-69-g38ee283",
 			"Rev": "38ee283dabf11c9cbdb968eebd79b1fa7acbabe6"
